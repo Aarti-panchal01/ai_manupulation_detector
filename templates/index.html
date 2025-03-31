@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Audio Analyzer Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #6b7280, #d1d5db);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            width: 100%;
+            max-width: 1000px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        h1 {
+            color: #1e40af;
+            text-align: center;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .file-label {
+            padding: 15px 30px;
+            background: #e5e7eb;
+            color: #1f2937;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .file-label:hover {
+            background: #d1d5db;
+            transform: scale(1.05);
+        }
+        .audio-preview {
+            margin-top: 20px;
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .analyze-btn {
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto;
+        }
+        .analyze-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+        .analyze-btn:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .loader {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #3b82f6;
+            border-top: 5px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .results, .history {
+            margin-top: 40px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .result-section, .history-item {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .result-section:hover, .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .result-section h3, .history-item h3 {
+            color: #1e40af;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .result-section p, .history-item p {
+            color: #374151;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .sentiment-positive { color: #22c55e; font-weight: 600; }
+        .sentiment-negative { color: #ef4444; font-weight: 600; }
+        .sentiment-neutral { color: #6b7280; font-weight: 600; }
+        .download-btn {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            float: right;
+        }
+        .download-btn:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: 500;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 25px; max-width: 100%; }
+            h1 { font-size: 28px; }
+            .analyze-btn { padding: 12px 40px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Audio Analyzer Pro</h1>
+        <form id="audioForm" enctype="multipart/form-data" method="POST" action="/analyze">
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <input type="file" id="audioInput" name="audio" class="file-input" accept="audio/*" required>
+                    <label for="audioInput" class="file-label">Choose Audio File</label>
+                </div>
+                <audio controls class="audio-preview" id="audioPreview"></audio>
+            </div>
+            <button type="submit" class="analyze-btn" id="analyzeBtn">Analyze</button>
+        </form>
+        <div class="loader" id="loader"></div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="results" id="results">
+            <button class="download-btn" id="downloadBtn">Download Report</button>
+            <div class="result-section">
+                <h3>Transcribed Text</h3>
+                <p id="transcribedText"></p>
+            </div>
+            <div class="result-section">
+                <h3>Sentiment</h3>
+                <p id="sentiment"></p>
+            </div>
+            <div class="result-section">
+                <h3>Language</h3>
+                <p id="language"></p>
+            </div>
+            <div class="result-section">
+                <h3>Speakers Detected</h3>
+                <p id="speakers"></p>
+            </div>
+            <div class="result-section">
+                <h3>Persuasion Techniques</h3>
+                <p id="persuasion"></p>
+            </div>
+        </div>
+        <div class="history" id="history">
+            <h3>Analysis History</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('audioForm');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const audioInput = document.getElementById('audioInput');
+        const audioPreview = document.getElementById('audioPreview');
+        const loader = document.getElementById('loader');
+        const resultsDiv = document.getElementById('results');
+        const historyDiv = document.getElementById('history');
+        const historyList = document.getElementById('historyList');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        audioInput.addEventListener('change', () => {
+            const file = audioInput.files[0];
+            if (file) {
+                audioPreview.src = URL.createObjectURL(file);
+                audioPreview.style.display = 'block';
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+            loader.style.display = 'block';
+            errorMessage.style.display = 'none';
+
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Analysis failed');
+                }
+                const data = await response.json();
+
+                // Display results
+                document.getElementById('transcribedText').textContent = data.text || 'No text detected';
+                document.getElementById('sentiment').textContent = data.sentiment || 'N/A';
+                document.getElementById('sentiment').className = `sentiment-${data.sentiment.toLowerCase()}`;
+                document.getElementById('language').textContent = data.language || 'Unknown';
+                document.getElementById('speakers').textContent = data.speakers || 'N/A';
+                const techniques = data.persuasion_techniques.map(t => `${t[0]} (${(t[1] * 100).toFixed(1)}%)`).join(', ') || 'None detected';
+                document.getElementById('persuasion').textContent = techniques;
+
+                resultsDiv.style.display = 'block';
+                addToHistory(data);
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = error.message || 'An error occurred during analysis';
+                errorMessage.style.display = 'block';
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze';
+                loader.style.display = 'none';
+            }
+        });
+
+        function addToHistory(data) {
+            const history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
+            history.unshift(data);
+            localStorage.setItem('analysisHistory', JSON.stringify(history.slice(0, 5))); // Limit to 5 entries
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
+            historyList.innerHTML = '';
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <h3>Analysis #${index + 1}</h3>
+                    <p><strong>Text:</strong> ${item.text.slice(0, 50)}...</p>
+                    <p><strong>Sentiment:</strong> <span class="sentiment-${item.sentiment.toLowerCase()}">${item.sentiment}</span></p>
+                `;
+                historyList.appendChild(div);
+            });
+            historyDiv.style.display = history.length ? 'block' : 'none';
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/download_report';
+        });
+
+        renderHistory();
+    </script>
+</body>
+</html>
+
+
+
